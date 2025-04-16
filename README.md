@@ -1,7 +1,7 @@
 # Substreams Ethereum Token Transfers
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Show cases Substreams extracting all ERC20/ERC721/ERC1155 transfers from Ethereum events for the full chain with sink output type ready to be consumed by https://github.com/streamingfast/substreams-sink-files in JSONL or CSV format.
+Show cases Substreams extracting all ERC20 transfers from Ethereum events
 
 ## Quick Start
 

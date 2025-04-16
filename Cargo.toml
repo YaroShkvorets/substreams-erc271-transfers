@@ -1,9 +1,9 @@
 [package]
-name = "substreams-eth-token-transfers"
-version = "0.4.0"
-description = "Substream Ethereum Token Transfers tracking"
+name = "substreams-erc271-transfers"
+version = "0.1.0"
+description = "Substream ERC271 Transfers tracking"
 edition = "2021"
-repository = "https://github.com/streamingfast/substreams-eth-token-transfers"
+repository = "https://github.com/YaroShkvorets/substreams-erc271-transfers"
 license = "Apache-2.0"
 
 [lib]

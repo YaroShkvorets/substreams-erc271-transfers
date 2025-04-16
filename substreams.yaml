@@ -1,10 +1,7 @@
 specVersion: v0.1.0
 package:
-  name: "substreams_eth_token_transfers"
-  version: v0.4.0
-
-imports:
-  sink_files: https://github.com/streamingfast/substreams-sink-files/releases/download/v0.1.0/substreams-sink-files-v0.1.0.spkg
+  name: "substreams_erc271_transfers"
+  version: v0.1.0
 
 protobuf:
   files:
@@ -26,18 +23,3 @@ modules:
     output:
       type: proto:eth.token.transfers.v1.Transfers
 
-  - name: jsonl_out
-    kind: map
-    initialBlock: 0
-    inputs:
-      - source: sf.ethereum.type.v2.Block
-    output:
-      type: proto:substreams.sink.files.v1.Lines
-
-  - name: csv_out
-    kind: map
-    initialBlock: 0
-    inputs:
-      - source: sf.ethereum.type.v2.Block
-    output:
-      type: proto:substreams.sink.files.v1.Lines
