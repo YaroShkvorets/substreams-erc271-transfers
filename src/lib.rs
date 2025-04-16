@@ -8,8 +8,9 @@ use substreams_ethereum::Event;
 
 use abi::erc721::events::Transfer as ERC721TransferEvent;
 use ethereum_types::U256;
+use prost::bytes::Bytes;
 
-const ZERO_ADDRESS: &str = "0000000000000000000000000000000000000000";
+const ZERO_ADDRESS: [u8; 20] = [0u8; 20];
 
 /// Extracts events events from the logs
 #[substreams::handlers::map]
@@ -21,13 +22,13 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
     // Collect all transaction hashes involved in any ERC721 event
     let mut event_tx_hashes = std::collections::HashSet::new();
     transfers.iter().for_each(|t| {
-        event_tx_hashes.insert(&t.trx_hash);
+        event_tx_hashes.insert(t.trx_hash.clone());
     });
     mints.iter().for_each(|m| {
-        event_tx_hashes.insert(&m.trx_hash);
+        event_tx_hashes.insert(m.trx_hash.clone());
     });
     burns.iter().for_each(|b| {
-        event_tx_hashes.insert(&b.trx_hash);
+        event_tx_hashes.insert(b.trx_hash.clone());
     });
 
     let transactions = get_transactions(&blk, &event_tx_hashes);
@@ -50,8 +51,7 @@ fn map_mints_with_uri(blk: eth::Block) -> Result<Mints, substreams::errors::Erro
         .into_iter()
         .map(|m| {
             let token_id = m.token_id.parse::<substreams::scalar::BigInt>().unwrap();
-            let contract = hex_to_bytes(&m.contract);
-            let uri = get_uri(contract, token_id);
+            let uri = get_uri(m.contract.clone().into(), token_id);
             Mint { uri, ..m }
         })
         .collect();
@@ -67,7 +67,7 @@ fn get_uri(address: Vec<u8>, token_id: substreams::scalar::BigInt) -> Option<Str
 
 fn get_transactions(
     blk: &eth::Block,
-    event_tx_hashes: &std::collections::HashSet<&String>,
+    event_tx_hashes: &std::collections::HashSet<Bytes>,
 ) -> Vec<Transaction> {
     let block_number = blk.number;
     let block_timestamp = blk
@@ -76,20 +76,20 @@ fn get_transactions(
         .and_then(|h| h.timestamp.as_ref())
         .map(|t| t.seconds as u64)
         .unwrap_or(0);
-    let block_hash = format!("0x{}", Hex(&blk.hash));
+    let block_hash = blk.hash.clone();
 
     blk.transaction_traces
         .iter()
-        .filter(|trace| event_tx_hashes.contains(&format!("0x{}", Hex(&trace.hash))))
+        .filter(|trace| event_tx_hashes.contains(&Bytes::from(trace.hash.clone())))
         .map(|trace| Transaction {
             block_number,
             block_timestamp,
-            block_hash: block_hash.clone(),
-            tx_hash: format!("0x{}", Hex(&trace.hash)),
+            block_hash: block_hash.clone().into(),
+            tx_hash: trace.hash.clone().into(),
             nonce: trace.nonce,
             position: trace.index,
-            from_address: format!("0x{}", Hex(&trace.from)),
-            to_address: format!("0x{}", Hex(&trace.to)),
+            from_address: trace.from.clone().into(),
+            to_address: trace.to.clone().into(),
             value: trace
                 .value
                 .as_ref()
@@ -110,14 +110,14 @@ fn get_transactions(
                 .unwrap_or_else(|| "0x0".to_string()),
             gas_limit: trace.gas_limit,
             gas_used: trace.gas_used,
-            v: format!("0x{}", Hex(&trace.v)),
-            r: format!("0x{}", Hex(&trace.r)),
-            s: format!("0x{}", Hex(&trace.s)),
+            v: trace.v.clone().into(),
+            r: trace.r.clone().into(),
+            s: trace.s.clone().into(),
         })
         .collect()
 }
 
-// Helper that extracts ERC721 transfer events from a block
+/// Helper that extracts ERC721 transfer events from a block
 fn extract_erc721_events<'a, T, F>(
     blk: &'a eth::Block,
     process_event: F,
@@ -141,17 +141,17 @@ where
 
 fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a {
     extract_erc721_events(blk, |block_num, hash, log_index, contract, event| {
-        let from = format!("0x{}", Hex(&event.from));
-        let to = format!("0x{}", Hex(&event.to));
+        let from = &event.from;
+        let to = &event.to;
 
-        if !is_zero_address(&from) && !is_zero_address(&to) {
+        if !is_zero_address(from) && !is_zero_address(to) {
             Some(Transfer {
                 block_num,
-                trx_hash: format!("0x{}", Hex(hash)),
+                trx_hash: hash.to_vec().into(),
                 log_index,
-                contract: format!("0x{}", Hex(contract)),
-                from,
-                to,
+                contract: contract.to_vec().into(),
+                from: from.to_vec().into(),
+                to: to.to_vec().into(),
                 token_id: event.token_id.to_string(),
             })
         } else {
@@ -162,15 +162,16 @@ fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a
 
 fn get_mints<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Mint> + 'a {
     extract_erc721_events(blk, |block_num, hash, log_index, contract, event| {
-        let from = format!("0x{}", Hex(&event.from));
+        let from = &event.from;
+        let to = &event.to;
 
-        if is_zero_address(&from) {
+        if is_zero_address(from.as_ref() as &[u8]) {
             Some(Mint {
                 block_num,
-                trx_hash: format!("0x{}", Hex(hash)),
+                trx_hash: hash.to_vec().into(),
                 log_index,
-                contract: format!("0x{}", Hex(contract)),
-                to: format!("0x{}", Hex(&event.to)),
+                contract: contract.to_vec().into(),
+                to: to.to_vec().into(),
                 token_id: event.token_id.to_string(),
                 uri: None,
             })
@@ -182,14 +183,15 @@ fn get_mints<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Mint> + 'a {
 
 fn get_burns<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Burn> + 'a {
     extract_erc721_events(blk, |block_num, hash, log_index, contract, event| {
-        let to = format!("0x{}", Hex(&event.to));
-        if is_zero_address(&to) {
+        let to = &event.to;
+        let from = &event.from;
+        if is_zero_address(to.as_ref() as &[u8]) {
             Some(Burn {
                 block_num,
-                trx_hash: format!("0x{}", Hex(hash)),
+                trx_hash: hash.to_vec().into(),
                 log_index,
-                contract: format!("0x{}", Hex(contract)),
-                from: format!("0x{}", Hex(&event.from)),
+                contract: contract.to_vec().into(),
+                from: from.to_vec().into(),
                 token_id: event.token_id.to_string(),
             })
         } else {
@@ -198,12 +200,6 @@ fn get_burns<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Burn> + 'a {
     })
 }
 
-fn is_zero_address(addr: &str) -> bool {
-    addr.trim_start_matches("0x")
-        .eq_ignore_ascii_case(ZERO_ADDRESS)
-}
-
-fn hex_to_bytes(s: &str) -> Vec<u8> {
-    let s = s.strip_prefix("0x").unwrap_or(s);
-    Hex::decode(s).unwrap_or_default()
+fn is_zero_address<T: AsRef<[u8]>>(addr: T) -> bool {
+    addr.as_ref() == ZERO_ADDRESS
 }

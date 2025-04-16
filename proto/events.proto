@@ -18,16 +18,16 @@ message Mint {
   uint64 block_num = 1;
 
   // The transaction hash that generated that transfer.
-  string trx_hash = 2;
+  bytes trx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
   // The contract address of the token.
-  string contract = 4;
+  bytes contract = 4;
 
   // The person that received the transfer.
-  string to = 5;
+  bytes to = 5;
 
   // TokenID the identifier of the token for which the transfer is happening.
   string token_id = 6;
@@ -41,19 +41,19 @@ message Transfer {
   uint64 block_num = 1;
 
   // The transaction hash that generated that transfer.
-  string trx_hash = 2;
+  bytes trx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
   // The contract address of the token.
-  string contract = 4;
+  bytes contract = 4;
 
   // The person that sent the transfer.
-  string from = 5;
+  bytes from = 5;
 
   // The person that received the transfer.
-  string to = 6;
+  bytes to = 6;
 
   // TokenID the identifier of the token for which the transfer is happening.
   string token_id = 7;
@@ -64,16 +64,16 @@ message Burn {
   uint64 block_num = 1;
 
   // The transaction hash that generated that transfer.
-  string trx_hash = 2;
+  bytes trx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
   // The contract address of the token.
-  string contract = 4;
+  bytes contract = 4;
 
   // The person that sent the burn.
-  string from = 5;
+  bytes from = 5;
 
   // TokenID the identifier of the token for which the burn is happening.
   string token_id = 6;
@@ -82,18 +82,18 @@ message Burn {
 message Transaction {
   uint64 block_number = 1;
   uint64 block_timestamp = 2;
-  string block_hash = 3;
-  string tx_hash = 4;
+  bytes block_hash = 3;
+  bytes tx_hash = 4;
   uint64 nonce = 5;
   uint32 position = 6;
-  string from_address = 7;
-  string to_address = 8;
+  bytes from_address = 7;
+  bytes to_address = 8;
   string value = 9;
   string tx_fee = 10;
   string gas_price = 11;
   uint64 gas_limit = 12;
   uint64 gas_used = 13;
-  string v = 14;
-  string r = 15;
-  string s = 16;
+  bytes v = 14;
+  bytes r = 15;
+  bytes s = 16;
 }
