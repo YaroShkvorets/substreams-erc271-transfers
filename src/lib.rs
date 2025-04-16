@@ -22,81 +22,81 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
     })
 }
 
-fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a {
+// Helper that extracts ERC721 transfer events from a block
+fn extract_erc721_events<'a, T, F>(
+    blk: &'a eth::Block,
+    process_event: F,
+) -> impl Iterator<Item = T> + 'a
+where
+    F: Fn(u64, &[u8], u64, ERC721TransferEvent) -> Option<T> + 'a + Copy,
+{
     let block_num = blk.number;
     blk.receipts().flat_map(move |receipt| {
         let hash = &receipt.transaction.hash;
         receipt.receipt.logs.iter().filter_map(move |log| {
             if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
-                let from = Hex(&event.from).to_string();
-                let to = Hex(&event.to).to_string();
-                if !is_zero_address(&from) && !is_zero_address(&to) {
-                    Some(Transfer {
-                        block_num,
-                        trx_hash: Hex(hash).to_string(),
-                        log_index: log.block_index as u64,
-                        from: Hex(&event.from).to_string(),
-                        to: Hex(&event.to).to_string(),
-                        token_id: event.token_id.to_string(),
-                    })
-                } else {
-                    None
-                }
+                process_event(block_num, hash, log.block_index as u64, event)
             } else {
                 None
             }
         })
+    })
+}
+
+fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a {
+    extract_erc721_events(blk, |block_num, hash, log_index, event| {
+        let from = Hex(&event.from).to_string();
+        let to = Hex(&event.to).to_string();
+
+        if !is_zero_address(&from) && !is_zero_address(&to) {
+            Some(Transfer {
+                block_num,
+                trx_hash: Hex(hash).to_string(),
+                log_index,
+                from,
+                to,
+                token_id: event.token_id.to_string(),
+            })
+        } else {
+            None
+        }
     })
 }
 
 fn get_mints<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Mint> + 'a {
-    let block_num = blk.number;
-    blk.receipts().flat_map(move |receipt| {
-        let hash = &receipt.transaction.hash;
-        receipt.receipt.logs.iter().filter_map(move |log| {
-            if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
-                let from = Hex(&event.from).to_string();
-                if is_zero_address(&from) {
-                    Some(Mint {
-                        block_num,
-                        trx_hash: Hex(hash).to_string(),
-                        log_index: log.block_index as u64,
-                        to: Hex(&event.to).to_string(),
-                        token_id: event.token_id.to_string(),
-                        uri: None,
-                    })
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
+    extract_erc721_events(blk, |block_num, hash, log_index, event| {
+        let from = Hex(&event.from).to_string();
+
+        if is_zero_address(&from) {
+            Some(Mint {
+                block_num,
+                trx_hash: Hex(hash).to_string(),
+                log_index,
+                to: Hex(&event.to).to_string(),
+                token_id: event.token_id.to_string(),
+                uri: None,
+            })
+        } else {
+            None
+        }
     })
 }
 
 fn get_burns<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Burn> + 'a {
-    let block_num = blk.number;
-    blk.receipts().flat_map(move |receipt| {
-        let hash = &receipt.transaction.hash;
-        receipt.receipt.logs.iter().filter_map(move |log| {
-            if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
-                let to = Hex(&event.to).to_string();
-                if is_zero_address(&to) {
-                    Some(Burn {
-                        block_num,
-                        trx_hash: Hex(hash).to_string(),
-                        log_index: log.block_index as u64,
-                        from: Hex(&event.from).to_string(),
-                        token_id: event.token_id.to_string(),
-                    })
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
+    extract_erc721_events(blk, |block_num, hash, log_index, event| {
+        let to = Hex(&event.to).to_string();
+
+        if is_zero_address(&to) {
+            Some(Burn {
+                block_num,
+                trx_hash: Hex(hash).to_string(),
+                log_index,
+                from: Hex(&event.from).to_string(),
+                token_id: event.token_id.to_string(),
+            })
+        } else {
+            None
+        }
     })
 }
 
