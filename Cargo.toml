@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 csv = "1.1"
+ethereum-types = "0.15.1"
 ethabi = "17"
 hex-literal = "0.3.4"
 num-bigint = "0.4"

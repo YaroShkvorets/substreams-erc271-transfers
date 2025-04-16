@@ -6,6 +6,7 @@ message Events {
   repeated Mint mints = 1;
   repeated Transfer transfers = 2;
   repeated Burn burns = 3;
+  repeated Transaction transactions = 4;
 }
 
 message Mint {
@@ -63,4 +64,23 @@ message Burn {
 
   // TokenID the identifier of the token for which the transfer is happening.
   string token_id = 5;
+}
+
+message Transaction {
+  uint64 block_number = 1;
+  uint64 block_timestamp = 2;
+  string block_hash = 3;
+  string tx_hash = 4;
+  uint64 nonce = 5;
+  uint32 position = 6;
+  string from_address = 7;
+  string to_address = 8;
+  string value = 9;
+  string tx_fee = 10;
+  string gas_price = 11;
+  uint64 gas_limit = 12;
+  uint64 gas_used = 13;
+  string v = 14;
+  string r = 15;
+  string s = 16;
 }
