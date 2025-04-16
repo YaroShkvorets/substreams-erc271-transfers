@@ -1,11 +1,11 @@
 specVersion: v0.1.0
 package:
-  name: "substreams_erc271_transfers"
+  name: "substreams_erc271_events"
   version: v0.1.0
 
 protobuf:
   files:
-    - transfers.proto
+    - events.proto
   importPaths:
     - ./proto
 
@@ -15,11 +15,11 @@ binaries:
     file: ./target/wasm32-unknown-unknown/release/substreams.wasm
 
 modules:
-  - name: map_transfers
+  - name: map_events
     kind: map
     initialBlock: 0
     inputs:
       - source: sf.ethereum.type.v2.Block
     output:
-      type: proto:eth.token.transfers.v1.Transfers
+      type: proto:eth.erc271.events.v1.Events
 

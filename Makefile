@@ -16,8 +16,8 @@ pack: build
 
 .PHONY: run
 run: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_transfers -s 10000000 -t +100
+	substreams run -e $(ENDPOINT) substreams.yaml map_events -s 10000000 -t +100
 
 .PHONY: gui
 gui: build
-	substreams gui -e $(ENDPOINT) substreams.yaml map_transfers -s 10000000 -t +1000
+	substreams gui -e $(ENDPOINT) substreams.yaml map_events -s 10000000 -t +1000
