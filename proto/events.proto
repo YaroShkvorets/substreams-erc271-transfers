@@ -9,6 +9,10 @@ message Events {
   repeated Transaction transactions = 4;
 }
 
+message Mints {
+  repeated Mint mints = 1;
+}
+
 message Mint {
   // Block number for the mint event
   uint64 block_num = 1;
@@ -19,14 +23,17 @@ message Mint {
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
+  // The contract address of the token.
+  string contract = 4;
+
   // The person that received the transfer.
-  string to = 4;
+  string to = 5;
 
   // TokenID the identifier of the token for which the transfer is happening.
-  string token_id = 5;
+  string token_id = 6;
 
   // URI of the token.
-  optional string uri = 6;
+  optional string uri = 7;
 }
 
 message Transfer {
@@ -39,14 +46,17 @@ message Transfer {
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
+  // The contract address of the token.
+  string contract = 4;
+
   // The person that sent the transfer.
-  string from = 4;
+  string from = 5;
 
   // The person that received the transfer.
-  string to = 5;
+  string to = 6;
 
   // TokenID the identifier of the token for which the transfer is happening.
-  string token_id = 6;
+  string token_id = 7;
 }
 
 message Burn {
@@ -59,11 +69,14 @@ message Burn {
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
-  // The person that sent the burn.
-  string from = 4;
+  // The contract address of the token.
+  string contract = 4;
 
-  // TokenID the identifier of the token for which the transfer is happening.
-  string token_id = 5;
+  // The person that sent the burn.
+  string from = 5;
+
+  // TokenID the identifier of the token for which the burn is happening.
+  string token_id = 6;
 }
 
 message Transaction {

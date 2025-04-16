@@ -20,4 +20,8 @@ run: build
 
 .PHONY: gui
 gui: build
-	substreams gui -e $(ENDPOINT) substreams.yaml map_events -s 10000000 -t +1000
+	substreams gui -e $(ENDPOINT) substreams.yaml map_events -s 10000000 -t +100
+
+.PHONY: mints
+mints: build
+	substreams gui -e $(ENDPOINT) substreams.yaml map_mints_with_uri -s 10000000 -t +100

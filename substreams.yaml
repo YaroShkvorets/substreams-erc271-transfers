@@ -23,3 +23,10 @@ modules:
     output:
       type: proto:eth.erc271.events.v1.Events
 
+  - name: map_mints_with_uri
+    kind: map
+    initialBlock: 0
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:eth.erc271.events.v1.Mints
