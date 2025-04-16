@@ -9,49 +9,58 @@ message Events {
 }
 
 message Mint {
+  // Block number for the mint event
+  uint64 block_num = 1;
+
   // The transaction hash that generated that transfer.
   string trx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
+
+  // The person that received the transfer.
+  string to = 4;
+
+  // TokenID the identifier of the token for which the transfer is happening.
+  string token_id = 5;
+
+  // URI of the token.
+  optional string uri = 6;
+}
+
+message Transfer {
+  // Block number for the transfer event
+  uint64 block_num = 1;
+
+  // The transaction hash that generated that transfer.
+  string trx_hash = 2;
+
+  // The index of the log within the transaction's receipts of the block.
+  uint64 log_index = 3;
+
+  // The person that sent the transfer.
+  string from = 4;
 
   // The person that received the transfer.
   string to = 5;
 
   // TokenID the identifier of the token for which the transfer is happening.
-  string token_id = 7;
-
-  // URI of the token.
-  string uri = 8;
-}
-
-message Transfer {
-  // The transaction hash that generated that transfer.
-  string trx_hash = 2;
-
-  // The index of the log within the transaction's receipts of the block.
-  uint64 log_index = 3;
-
-  // The person that sent the transfer.
-  string from = 5;
-
-  // The person that received the transfer.
-  string to = 6;
-
-  // TokenID the identifier of the token for which the transfer is happening.
-  string token_id = 7;
+  string token_id = 6;
 }
 
 message Burn {
+  // Block number for the burn event
+  uint64 block_num = 1;
+
   // The transaction hash that generated that transfer.
   string trx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
 
-  // The person that sent the transfer.
-  string from = 5;
+  // The person that sent the burn.
+  string from = 4;
 
   // TokenID the identifier of the token for which the transfer is happening.
-  string token_id = 7;
+  string token_id = 5;
 }

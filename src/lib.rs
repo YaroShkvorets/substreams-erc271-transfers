@@ -23,7 +23,8 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
 }
 
 fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a {
-    blk.receipts().flat_map(|receipt| {
+    let block_num = blk.number;
+    blk.receipts().flat_map(move |receipt| {
         let hash = &receipt.transaction.hash;
         receipt.receipt.logs.iter().filter_map(move |log| {
             if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
@@ -31,10 +32,11 @@ fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a
                 let to = Hex(&event.to).to_string();
                 if !is_zero_address(&from) && !is_zero_address(&to) {
                     Some(Transfer {
-                        from: Hex(&event.from).to_string(),
-                        to: Hex(&event.to).to_string(),
+                        block_num,
                         trx_hash: Hex(hash).to_string(),
                         log_index: log.block_index as u64,
+                        from: Hex(&event.from).to_string(),
+                        to: Hex(&event.to).to_string(),
                         token_id: event.token_id.to_string(),
                     })
                 } else {
@@ -48,18 +50,20 @@ fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a
 }
 
 fn get_mints<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Mint> + 'a {
-    blk.receipts().flat_map(|receipt| {
+    let block_num = blk.number;
+    blk.receipts().flat_map(move |receipt| {
         let hash = &receipt.transaction.hash;
         receipt.receipt.logs.iter().filter_map(move |log| {
             if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
                 let from = Hex(&event.from).to_string();
                 if is_zero_address(&from) {
                     Some(Mint {
-                        to: Hex(&event.to).to_string(),
+                        block_num,
                         trx_hash: Hex(hash).to_string(),
                         log_index: log.block_index as u64,
+                        to: Hex(&event.to).to_string(),
                         token_id: event.token_id.to_string(),
-                        uri: "".into(),
+                        uri: None,
                     })
                 } else {
                     None
@@ -72,16 +76,18 @@ fn get_mints<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Mint> + 'a {
 }
 
 fn get_burns<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Burn> + 'a {
-    blk.receipts().flat_map(|receipt| {
+    let block_num = blk.number;
+    blk.receipts().flat_map(move |receipt| {
         let hash = &receipt.transaction.hash;
         receipt.receipt.logs.iter().filter_map(move |log| {
             if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
                 let to = Hex(&event.to).to_string();
                 if is_zero_address(&to) {
                     Some(Burn {
-                        from: Hex(&event.from).to_string(),
+                        block_num,
                         trx_hash: Hex(hash).to_string(),
                         log_index: log.block_index as u64,
+                        from: Hex(&event.from).to_string(),
                         token_id: event.token_id.to_string(),
                     })
                 } else {
