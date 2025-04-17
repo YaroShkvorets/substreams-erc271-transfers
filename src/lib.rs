@@ -2,12 +2,11 @@ mod abi;
 mod pb;
 
 use pb::events::{Burn, Events, Mint, Mints, Transaction, Transfer};
-use substreams::Hex;
+use substreams::scalar::BigInt;
 use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::Event;
 
 use abi::erc721::events::Transfer as ERC721TransferEvent;
-use ethereum_types::U256;
 use prost::bytes::Bytes;
 
 const ZERO_ADDRESS: [u8; 20] = [0u8; 20];
@@ -45,23 +44,18 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
 /// We do this to avoid re-making RPC calls if we change something in map_events
 #[substreams::handlers::map]
 fn map_mints_with_uri(blk: eth::Block) -> Result<Mints, substreams::errors::Error> {
-    let mints: Vec<Mint> = get_mints(&blk).collect();
-
-    let mints_with_uri = mints
-        .into_iter()
-        .map(|m| {
-            let token_id = m.token_id.parse::<substreams::scalar::BigInt>().unwrap();
-            let uri = get_uri(m.contract.clone().into(), token_id);
-            Mint { uri, ..m }
+    let mints = get_mints(&blk)
+        .map(|mint| {
+            let token_id = mint.token_id.parse::<BigInt>().expect("invalid token_id");
+            let uri = get_uri(mint.contract.clone().into(), token_id);
+            Mint { uri, ..mint }
         })
         .collect();
 
-    Ok(Mints {
-        mints: mints_with_uri,
-    })
+    Ok(Mints { mints })
 }
 
-fn get_uri(address: Vec<u8>, token_id: substreams::scalar::BigInt) -> Option<String> {
+fn get_uri(address: Vec<u8>, token_id: BigInt) -> Option<String> {
     abi::erc721::functions::TokenUri { token_id }.call(address)
 }
 
@@ -81,38 +75,44 @@ fn get_transactions(
     blk.transaction_traces
         .iter()
         .filter(|trace| event_tx_hashes.contains(&Bytes::from(trace.hash.clone())))
-        .map(|trace| Transaction {
-            block_number,
-            block_timestamp,
-            block_hash: block_hash.clone().into(),
-            tx_hash: trace.hash.clone().into(),
-            nonce: trace.nonce,
-            position: trace.index,
-            from_address: trace.from.clone().into(),
-            to_address: trace.to.clone().into(),
-            value: trace
+        .map(|trace| {
+            let value = trace
                 .value
                 .as_ref()
-                .map(|v| format!("0x{}", Hex(&v.bytes)))
-                .unwrap_or_else(|| "0x0".to_string()),
-            tx_fee: trace
+                .map(|v| BigInt::from_unsigned_bytes_be(&v.bytes).to_string())
+                .unwrap_or_else(|| "0".to_string());
+            let gas_price = trace
                 .gas_price
                 .as_ref()
-                .map(|v| {
-                    let fee = U256::from_big_endian(&v.bytes) * trace.gas_used;
-                    format!("0x{:x}", fee)
+                .map(|v| BigInt::from_unsigned_bytes_be(&v.bytes).to_string())
+                .unwrap_or_else(|| "0".to_string());
+            let tx_fee = trace
+                .gas_price
+                .as_ref()
+                .map(|gp| {
+                    let fee =
+                        BigInt::from_unsigned_bytes_be(&gp.bytes) * BigInt::from(trace.gas_used);
+                    fee.to_string()
                 })
-                .unwrap_or_else(|| "0x0".to_string()),
-            gas_price: trace
-                .gas_price
-                .as_ref()
-                .map(|v| format!("0x{}", Hex(&v.bytes)))
-                .unwrap_or_else(|| "0x0".to_string()),
-            gas_limit: trace.gas_limit,
-            gas_used: trace.gas_used,
-            v: trace.v.clone().into(),
-            r: trace.r.clone().into(),
-            s: trace.s.clone().into(),
+                .unwrap_or_else(|| "0".to_string());
+            Transaction {
+                block_number,
+                block_timestamp,
+                block_hash: block_hash.clone().into(),
+                tx_hash: trace.hash.clone().into(),
+                nonce: trace.nonce,
+                position: trace.index,
+                from_address: trace.from.clone().into(),
+                to_address: trace.to.clone().into(),
+                value,
+                tx_fee,
+                gas_price,
+                gas_limit: trace.gas_limit,
+                gas_used: trace.gas_used,
+                v: trace.v.clone().into(),
+                r: trace.r.clone().into(),
+                s: trace.s.clone().into(),
+            }
         })
         .collect()
 }
