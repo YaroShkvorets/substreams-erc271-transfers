@@ -19,16 +19,12 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
     let burns: Vec<Burn> = get_burns(&blk).collect();
 
     // Collect all transaction hashes involved in any ERC721 event
-    let mut event_tx_hashes = std::collections::HashSet::new();
-    transfers.iter().for_each(|t| {
-        event_tx_hashes.insert(t.tx_hash.clone());
-    });
-    mints.iter().for_each(|m| {
-        event_tx_hashes.insert(m.tx_hash.clone());
-    });
-    burns.iter().for_each(|b| {
-        event_tx_hashes.insert(b.tx_hash.clone());
-    });
+    let event_tx_hashes: std::collections::HashSet<_> = transfers
+        .iter()
+        .map(|t| t.tx_hash.clone())
+        .chain(mints.iter().map(|m| m.tx_hash.clone()))
+        .chain(burns.iter().map(|b| b.tx_hash.clone()))
+        .collect();
 
     let transactions = get_transactions(&blk, &event_tx_hashes);
 
