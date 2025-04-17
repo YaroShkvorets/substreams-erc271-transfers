@@ -7,7 +7,6 @@ use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::Event;
 
 use abi::erc721::events::Transfer as ERC721TransferEvent;
-use prost::bytes::Bytes;
 
 const ZERO_ADDRESS: [u8; 20] = [0u8; 20];
 
@@ -19,11 +18,11 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
     let burns: Vec<Burn> = get_burns(&blk).collect();
 
     // Collect all transaction hashes involved in any ERC721 event
-    let event_tx_hashes: std::collections::HashSet<_> = transfers
+    let event_tx_hashes: std::collections::HashSet<Vec<u8>> = transfers
         .iter()
-        .map(|t| t.tx_hash.clone())
-        .chain(mints.iter().map(|m| m.tx_hash.clone()))
-        .chain(burns.iter().map(|b| b.tx_hash.clone()))
+        .map(|t| t.tx_hash.to_vec())
+        .chain(mints.iter().map(|m| m.tx_hash.to_vec()))
+        .chain(burns.iter().map(|b| b.tx_hash.to_vec()))
         .collect();
 
     let transactions = get_transactions(&blk, &event_tx_hashes);
@@ -57,7 +56,7 @@ fn get_uri(address: Vec<u8>, token_id: BigInt) -> Option<String> {
 
 fn get_transactions(
     blk: &eth::Block,
-    event_tx_hashes: &std::collections::HashSet<Bytes>,
+    event_tx_hashes: &std::collections::HashSet<Vec<u8>>,
 ) -> Vec<Transaction> {
     let block_number = blk.number;
     let block_timestamp = blk
@@ -70,7 +69,7 @@ fn get_transactions(
 
     blk.transaction_traces
         .iter()
-        .filter(|trace| event_tx_hashes.contains(&Bytes::from(trace.hash.clone())))
+        .filter(|trace| event_tx_hashes.contains(&trace.hash))
         .map(|trace| {
             let value = trace
                 .value
