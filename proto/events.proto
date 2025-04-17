@@ -18,7 +18,7 @@ message Mint {
   uint64 block_num = 1;
 
   // The transaction hash that generated that transfer.
-  bytes trx_hash = 2;
+  bytes tx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
@@ -41,7 +41,7 @@ message Transfer {
   uint64 block_num = 1;
 
   // The transaction hash that generated that transfer.
-  bytes trx_hash = 2;
+  bytes tx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;
@@ -64,7 +64,7 @@ message Burn {
   uint64 block_num = 1;
 
   // The transaction hash that generated that transfer.
-  bytes trx_hash = 2;
+  bytes tx_hash = 2;
 
   // The index of the log within the transaction's receipts of the block.
   uint64 log_index = 3;

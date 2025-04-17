@@ -22,13 +22,13 @@ fn map_events(blk: eth::Block) -> Result<Events, substreams::errors::Error> {
     // Collect all transaction hashes involved in any ERC721 event
     let mut event_tx_hashes = std::collections::HashSet::new();
     transfers.iter().for_each(|t| {
-        event_tx_hashes.insert(t.trx_hash.clone());
+        event_tx_hashes.insert(t.tx_hash.clone());
     });
     mints.iter().for_each(|m| {
-        event_tx_hashes.insert(m.trx_hash.clone());
+        event_tx_hashes.insert(m.tx_hash.clone());
     });
     burns.iter().for_each(|b| {
-        event_tx_hashes.insert(b.trx_hash.clone());
+        event_tx_hashes.insert(b.tx_hash.clone());
     });
 
     let transactions = get_transactions(&blk, &event_tx_hashes);
@@ -147,7 +147,7 @@ fn get_transfers<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Transfer> + 'a
         if !is_zero_address(from) && !is_zero_address(to) {
             Some(Transfer {
                 block_num,
-                trx_hash: hash.to_vec().into(),
+                tx_hash: hash.to_vec().into(),
                 log_index,
                 contract: contract.to_vec().into(),
                 from: from.to_vec().into(),
@@ -168,7 +168,7 @@ fn get_mints<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Mint> + 'a {
         if is_zero_address(from.as_ref() as &[u8]) {
             Some(Mint {
                 block_num,
-                trx_hash: hash.to_vec().into(),
+                tx_hash: hash.to_vec().into(),
                 log_index,
                 contract: contract.to_vec().into(),
                 to: to.to_vec().into(),
@@ -188,7 +188,7 @@ fn get_burns<'a>(blk: &'a eth::Block) -> impl Iterator<Item = Burn> + 'a {
         if is_zero_address(to.as_ref() as &[u8]) {
             Some(Burn {
                 block_num,
-                trx_hash: hash.to_vec().into(),
+                tx_hash: hash.to_vec().into(),
                 log_index,
                 contract: contract.to_vec().into(),
                 from: from.to_vec().into(),
